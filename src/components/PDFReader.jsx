@@ -91,16 +91,22 @@ const PDFReader = () => {
     }
   };
 
+  const getChunks = (content) => {
+    if (!content) return [];
+    return content.split('\n\n').filter(t => t.trim().length > 0);
+  };
+
   const readChunk = (index, textArray) => {
-    if (index >= textArray.length) {
+    if (index < 0 || index >= textArray.length) {
       setIsReading(false);
-      setCurrentChunkIndex(0);
-      setDebugInfo(prev => ({ ...prev, status: 'Finished reading' }));
+      setCurrentChunkIndex(index >= textArray.length ? 0 : index);
+      setDebugInfo(prev => ({ ...prev, status: index >= textArray.length ? 'Finished reading' : 'Ready' }));
       return;
     }
 
+    speech.cancel(); // Clear any pending speech
     const utterance = new SpeechSynthesisUtterance(textArray[index]);
-    utterance.rate = rate; // Apply speed control
+    utterance.rate = rate;
 
     if (selectedVoice) {
       const voiceObject = voices.find(v => v.name === selectedVoice);
@@ -118,15 +124,22 @@ const PDFReader = () => {
     };
 
     utterance.onend = () => {
-      readChunk(index + 1, textArray);
+      // Small delay before next chunk for more natural feel
+      setTimeout(() => {
+        if (window.speechSynthesis.speaking) return; // Guard against concurrent calls
+        readChunk(index + 1, textArray);
+      }, 100);
     };
 
     utterance.onerror = (e) => {
+      if (e.error === 'interrupted') return; // Ignore expected interruptions
       console.error('Speech synthesis error:', e);
       setIsReading(false);
       setDebugInfo(prev => ({ ...prev, status: 'Speech error occurred' }));
     };
+
     speech.speak(utterance);
+    setIsReading(true);
   };
 
   const toggleRead = () => {
@@ -137,25 +150,19 @@ const PDFReader = () => {
     } else {
       if (!text || text.startsWith('No text found')) return;
       
-      const textArray = text.split('\n\n').filter(t => t.trim().length > 2);
-      if (textArray.length === 0) return;
+      const chunks = getChunks(text);
+      if (chunks.length === 0) return;
 
-      setIsReading(true);
-      readChunk(currentChunkIndex, textArray);
+      readChunk(currentChunkIndex, chunks);
     }
   };
 
   const handleChunkClick = (index) => {
-    if (isReading) {
-      speech.cancel();
-    }
-    setCurrentChunkIndex(index);
-    setDebugInfo(prev => ({ ...prev, status: `Will start from paragraph ${index + 1}` }));
+    const chunks = getChunks(text);
+    if (chunks.length === 0) return;
     
-    if (isReading) {
-      const textArray = text.split('\n\n').filter(t => t.trim().length > 2);
-      readChunk(index, textArray);
-    }
+    setCurrentChunkIndex(index);
+    readChunk(index, chunks);
   };
 
   const handleReset = () => {
@@ -166,7 +173,7 @@ const PDFReader = () => {
     setDebugInfo({ pages: 0, textLength: 0, status: 'Idle' });
   };
 
-  const textChunks = text.split('\n\n').filter(t => t.trim().length > 0);
+  const textChunks = getChunks(text);
 
   return (
     <div className="pdf-reader glass-morphism" style={{ padding: '40px', maxWidth: '800px', margin: '40px auto' }}>
