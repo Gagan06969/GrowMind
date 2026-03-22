@@ -155,11 +155,17 @@ body {
   }
 
   .stats-row {
-    flex-direction: column;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 15px !important;
+    gap: 15px !important;
+    -webkit-overflow-scrolling: touch;
   }
   
   .stat-card {
-    width: 100%;
+    min-width: 250px !important;
+    flex: 0 0 auto !important;
   }
 
   header h1 {
