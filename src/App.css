@@ -1,0 +1,83 @@
+#root {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+}
+
+.app-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.main-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.card {
+  padding: 24px;
+  height: 100%;
+}
+
+.forest-view {
+  grid-column: span 2;
+  min-height: 400px;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at center, #1a2a24, #0a0f0d);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tree-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-template-rows: repeat(10, 1fr);
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+}
+
+.tile {
+  width: 100%;
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease;
+}
+
+.tile:hover {
+  background: rgba(46, 204, 113, 0.1);
+}
+
+.tile.locked {
+  background: rgba(0, 0, 0, 0.5);
+  filter: blur(2px);
+  cursor: not-allowed;
+}
+
+.tree-svg {
+  width: 80%;
+  height: 80%;
+  animation: grow 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes grow {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
