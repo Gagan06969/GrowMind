@@ -143,15 +143,25 @@ body {
   }
 
   .nav-item {
-    padding: 10px !important;
+    padding: 5px !important;
+    flex-direction: column !important;
     justify-content: center !important;
-    border-radius: 50% !important;
-    width: 44px !important;
-    height: 44px !important;
+    border-radius: 12px !important;
+    width: auto !important;
+    height: 100% !important;
+    flex: 1 !important;
+    gap: 4px !important;
   }
 
   .nav-item span {
-    display: none !important;
+    display: block !important;
+    font-size: 10px !important;
+    font-weight: 500 !important;
+  }
+
+  .nav-item svg {
+    width: 20px !important;
+    height: 20px !important;
   }
 
   .stats-row {
