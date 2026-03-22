@@ -15,6 +15,7 @@ const PDFReader = () => {
   const [debugInfo, setDebugInfo] = useState({ pages: 0, textLength: 0, status: 'Idle' });
   const [voices, setVoices] = useState([]);
   const [selectedVoice, setSelectedVoice] = useState(null);
+  const [rate, setRate] = useState(1.0);
 
   useEffect(() => {
     if ('speechSynthesis' in window) {
@@ -26,7 +27,6 @@ const PDFReader = () => {
         const availableVoices = synth.getVoices();
         setVoices(availableVoices);
         if (availableVoices.length > 0 && !selectedVoice) {
-          // Prefer English voices
           const preferred = availableVoices.find(v => v.lang.startsWith('en') && v.name.includes('Google')) || 
                             availableVoices.find(v => v.lang.startsWith('en')) || 
                             availableVoices[0];
@@ -100,6 +100,8 @@ const PDFReader = () => {
     }
 
     const utterance = new SpeechSynthesisUtterance(textArray[index]);
+    utterance.rate = rate; // Apply speed control
+
     if (selectedVoice) {
       const voiceObject = voices.find(v => v.name === selectedVoice);
       if (voiceObject) utterance.voice = voiceObject;
@@ -109,7 +111,6 @@ const PDFReader = () => {
       setCurrentChunkIndex(index);
       setDebugInfo(prev => ({ ...prev, status: `Reading paragraph ${index + 1} of ${textArray.length}` }));
       
-      // Auto-scroll to current paragraph
       const element = document.getElementById(`chunk-${index}`);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -144,6 +145,19 @@ const PDFReader = () => {
     }
   };
 
+  const handleChunkClick = (index) => {
+    if (isReading) {
+      speech.cancel();
+    }
+    setCurrentChunkIndex(index);
+    setDebugInfo(prev => ({ ...prev, status: `Will start from paragraph ${index + 1}` }));
+    
+    if (isReading) {
+      const textArray = text.split('\n\n').filter(t => t.trim().length > 2);
+      readChunk(index, textArray);
+    }
+  };
+
   const handleReset = () => {
     setText('');
     speech?.cancel();
@@ -158,7 +172,10 @@ const PDFReader = () => {
     <div className="pdf-reader glass-morphism" style={{ padding: '40px', maxWidth: '800px', margin: '40px auto' }}>
       <style>{`
         .active-chunk { background: rgba(46, 204, 113, 0.2); border-left: 4px solid var(--primary-green); padding-left: 12px; border-radius: 4px; }
-        .chunk { padding: 4px 0; transition: background 0.3s ease; }
+        .chunk { padding: 8px 12px; transition: all 0.3s ease; cursor: pointer; border-radius: 8px; }
+        .chunk:hover { background: rgba(255, 255, 255, 0.05); }
+        .chunk-skip { opacity: 0; transition: opacity 0.2s; font-size: 10px; font-weight: bold; color: var(--primary-green); margin-bottom: 4px; display: block; }
+        .chunk:hover .chunk-skip { opacity: 1; }
       `}</style>
       
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
@@ -175,30 +192,56 @@ const PDFReader = () => {
           fontSize: '13px', 
           display: 'flex', 
           alignItems: 'center', 
-          gap: '12px',
+          gap: '16px',
           flexWrap: 'wrap',
           border: '1px solid var(--glass-border)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '150px' }}>
             <Info size={16} color="var(--primary-green)" />
             <span style={{ color: 'var(--text-muted)' }}>Status: </span>
             <span style={{ fontWeight: '600' }}>{debugInfo.status}</span>
           </div>
           
-          {voices.length > 0 && (
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Voice: </span>
+          <div style={{ display: 'flex', gap: '16px', marginLeft: 'auto', flexWrap: 'wrap' }}>
+            {voices.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Voice: </span>
+                <select 
+                  value={selectedVoice || ''} 
+                  onChange={(e) => setSelectedVoice(e.target.value)}
+                  style={{ background: 'var(--bg-card)', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '4px', fontSize: '12px', padding: '2px 4px' }}
+                >
+                  {voices.map(v => (
+                    <option key={v.name} value={v.name}>{v.name} ({v.lang.split('-')[0]})</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Speed: </span>
               <select 
-                value={selectedVoice || ''} 
-                onChange={(e) => setSelectedVoice(e.target.value)}
+                value={rate} 
+                onChange={(e) => {
+                  const newRate = parseFloat(e.target.value);
+                  setRate(newRate);
+                  if (isReading) {
+                    speech.cancel();
+                    const textArray = text.split('\n\n').filter(t => t.trim().length > 2);
+                    readChunk(currentChunkIndex, textArray);
+                  }
+                }}
                 style={{ background: 'var(--bg-card)', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '4px', fontSize: '12px', padding: '2px 4px' }}
               >
-                {voices.map(v => (
-                  <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
-                ))}
+                <option value="0.5">0.5x</option>
+                <option value="0.75">0.75x</option>
+                <option value="1">1.0x</option>
+                <option value="1.25">1.25x</option>
+                <option value="1.5">1.5x</option>
+                <option value="2">2.0x</option>
               </select>
             </div>
-          )}
+          </div>
         </div>
 
         {!text && !isExtracting ? (
@@ -233,9 +276,10 @@ const PDFReader = () => {
                 <div 
                   key={idx} 
                   id={`chunk-${idx}`}
+                  onClick={() => handleChunkClick(idx)}
                   className={`chunk ${idx === currentChunkIndex && isReading ? 'active-chunk' : ''}`}
-                  style={{ marginBottom: '16px' }}
                 >
+                  <span className="chunk-skip">Click to start from here</span>
                   {chunk}
                 </div>
               ))}
