@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, Play, Pause, FileText, Download, Loader2 } from 'lucide-react';
+import { Volume2, Play, Pause, FileText, Download, Loader2, Info } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Set up worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+// More robust worker setup for Vite
+// Fallback to CDN but with a more standard approach if Vite import fails
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const PDFReader = () => {
   const [text, setText] = useState('');
@@ -11,11 +12,15 @@ const PDFReader = () => {
   const [isExtracting, setIsExtracting] = useState(false);
   const [speech, setSpeech] = useState(null);
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
+  const [debugInfo, setDebugInfo] = useState({ pages: 0, textLength: 0, status: 'Idle' });
 
   useEffect(() => {
     if ('speechSynthesis' in window) {
       const synth = window.speechSynthesis;
       setSpeech(synth);
+      setDebugInfo(prev => ({ ...prev, status: 'Speech API Ready' }));
+    } else {
+      setDebugInfo(prev => ({ ...prev, status: 'Speech API Not Supported' }));
     }
     return () => {
       window.speechSynthesis.cancel();
@@ -28,21 +33,38 @@ const PDFReader = () => {
       setIsExtracting(true);
       setText('');
       setCurrentChunkIndex(0);
+      setDebugInfo({ pages: 0, textLength: 0, status: 'Loading PDF...' });
+      
       try {
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        let fullText = '';
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
         
+        setDebugInfo(prev => ({ ...prev, pages: pdf.numPages, status: `Extracted ${pdf.numPages} pages` }));
+        
+        let fullText = '';
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
-          const pageText = textContent.items.map(item => item.str).join(' ');
+          const pageText = textContent.items
+            .map(item => item.str)
+            .join(' ')
+            .replace(/\s+/g, ' '); 
           fullText += pageText + '\n\n';
+          setDebugInfo(prev => ({ ...prev, status: `Processing page ${i}/${pdf.numPages}...` }));
         }
         
-        setText(fullText.trim() || 'No text found in PDF.');
+        const finalText = fullText.trim();
+        if (!finalText) {
+          setText('No text found in PDF. This might be a scanned document or image-based PDF.');
+          setDebugInfo(prev => ({ ...prev, textLength: 0, status: 'No text content found' }));
+        } else {
+          setText(finalText);
+          setDebugInfo(prev => ({ ...prev, textLength: finalText.length, status: 'Ready to read' }));
+        }
       } catch (error) {
         console.error('Error extracting PDF text:', error);
+        setDebugInfo(prev => ({ ...prev, status: `Error: ${error.message}` }));
         setText('Error extracting text from PDF. Please ensure it is a valid PDF and try again.');
       } finally {
         setIsExtracting(false);
@@ -54,16 +76,22 @@ const PDFReader = () => {
     if (index >= textArray.length) {
       setIsReading(false);
       setCurrentChunkIndex(0);
+      setDebugInfo(prev => ({ ...prev, status: 'Finished reading' }));
       return;
     }
 
     const utterance = new SpeechSynthesisUtterance(textArray[index]);
+    utterance.onstart = () => {
+      setDebugInfo(prev => ({ ...prev, status: `Reading paragraph ${index + 1} of ${textArray.length}` }));
+    };
     utterance.onend = () => {
       setCurrentChunkIndex(index + 1);
       readChunk(index + 1, textArray);
     };
-    utterance.onerror = () => {
+    utterance.onerror = (e) => {
+      console.error('Speech synthesis error:', e);
       setIsReading(false);
+      setDebugInfo(prev => ({ ...prev, status: 'Speech error occurred' }));
     };
     speech.speak(utterance);
   };
@@ -72,11 +100,11 @@ const PDFReader = () => {
     if (isReading) {
       speech.cancel();
       setIsReading(false);
+      setDebugInfo(prev => ({ ...prev, status: 'Paused' }));
     } else {
-      if (!text) return;
+      if (!text || text.startsWith('No text found')) return;
       
-      // Split by double newline (paragraphs) for smoother reading and better API handling
-      const textArray = text.split('\n\n').filter(t => t.trim().length > 0);
+      const textArray = text.split('\n\n').filter(t => t.trim().length > 2);
       if (textArray.length === 0) return;
 
       setIsReading(true);
@@ -89,6 +117,7 @@ const PDFReader = () => {
     speech?.cancel();
     setIsReading(false);
     setCurrentChunkIndex(0);
+    setDebugInfo({ pages: 0, textLength: 0, status: 'Idle' });
   };
 
   return (
@@ -100,6 +129,26 @@ const PDFReader = () => {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ 
+          background: 'rgba(255,255,255,0.03)', 
+          padding: '12px 20px', 
+          borderRadius: '10px', 
+          fontSize: '13px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px',
+          border: '1px solid var(--glass-border)'
+        }}>
+          <Info size={16} color="var(--primary-green)" />
+          <span style={{ color: 'var(--text-muted)' }}>Status: </span>
+          <span style={{ fontWeight: '600' }}>{debugInfo.status}</span>
+          {debugInfo.pages > 0 && (
+            <span style={{ marginLeft: 'auto', color: 'var(--text-muted)' }}>
+              {debugInfo.pages} pages | {Math.round(debugInfo.textLength / 1000)}k chars
+            </span>
+          )}
+        </div>
+
         {!text && !isExtracting ? (
           <div style={{ border: '2px dashed var(--glass-border)', borderRadius: '16px', padding: '40px', textAlign: 'center' }}>
             <input type="file" accept=".pdf" id="pdf-input" onChange={handleFileUpload} style={{ display: 'none' }} />
@@ -112,7 +161,7 @@ const PDFReader = () => {
         ) : isExtracting ? (
           <div style={{ textAlign: 'center', padding: '40px' }}>
             <Loader2 className="animate-spin" size={48} color="var(--primary-green)" style={{ margin: '0 auto 16px' }} />
-            <p>Extracting text from your book...</p>
+            <p>{debugInfo.status}</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -132,9 +181,9 @@ const PDFReader = () => {
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-              <button className="btn btn-primary" onClick={toggleRead} disabled={!text}>
+              <button className="btn btn-primary" onClick={toggleRead} disabled={!text || text.startsWith('No text found')}>
                 {isReading ? <Pause size={20} /> : <Play size={20} />}
-                {isReading ? 'Stop Reading' : 'Start Audio'}
+                {isReading ? 'Pause Audio' : (currentChunkIndex > 0 ? 'Resume Audio' : 'Start Audio')}
               </button>
               <button className="btn" onClick={handleReset} style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }}>
                 Reset
