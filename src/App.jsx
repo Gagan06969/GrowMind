@@ -6,7 +6,7 @@ import PDFReader from './components/PDFReader'
 import ForestMap from './components/ForestMap'
 import Analytics from './components/Analytics'
 import './App.css'
-import { Play, Plus, Clock, TreePine, Flame, BarChart3, Map as MapIcon } from 'lucide-react'
+import { Play, Plus, Clock, TreePine, Flame, BarChart3, Map as MapIcon, Menu, X } from 'lucide-react'
 
 import { supabase } from './supabaseClient'
 import Auth from './components/Auth'
@@ -18,6 +18,7 @@ function App() {
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeBiome, setActiveBiome] = useState('forest')
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -150,14 +151,23 @@ function App() {
   ]
 
   return (
-    <div className="app-container">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} streak={currentStreak} />
+    <div className={`app-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+      <Sidebar activeTab={activeTab} setActiveTab={(tab) => { setActiveTab(tab); setIsSidebarOpen(false); }} streak={currentStreak} isOpen={isSidebarOpen} />
       
       <main className="main-content">
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-          <div>
-            <h1 style={{ fontSize: '28px', fontWeight: 'bold' }}>Welcome back, {session?.user?.email?.split('@')[0] || 'GrowMind User'}</h1>
-            <p style={{ color: 'var(--text-muted)' }}>World Power: {trees.length + (currentStreak * 3)} — You've unlocked {Math.floor((trees.length + currentStreak * 3) / 30)} focus biomes.</p>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button 
+              className="btn menu-toggle" 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+              style={{ background: 'var(--bg-card)', padding: '10px' }}
+            >
+              {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+            <div>
+              <h1 style={{ fontSize: '28px', fontWeight: 'bold' }}>Welcome back, {session?.user?.email?.split('@')[0] || 'GrowMind User'}</h1>
+              <p style={{ color: 'var(--text-muted)' }}>World Power: {trees.length + (currentStreak * 3)} — You've unlocked {Math.floor((trees.length + currentStreak * 3) / 30)} focus biomes.</p>
+            </div>
           </div>
           <button className="btn btn-primary" onClick={() => setActiveTab('session')}>
             <Plus size={20} />
