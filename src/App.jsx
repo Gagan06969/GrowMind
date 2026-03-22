@@ -17,6 +17,7 @@ function App() {
   const [trees, setTrees] = useState([])
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
+  const [activeBiome, setActiveBiome] = useState('forest')
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -58,15 +59,25 @@ function App() {
 
   const categorizeSession = (title) => {
     const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes('mosfet') || lowerTitle.includes('electronics') || lowerTitle.includes('circuit')) return 'Core Subjects';
+    if (lowerTitle.includes('mosfet') || lowerTitle.includes('electronics') || lowerTitle.includes('circuit') || lowerTitle.includes('semiconductor')) return 'Electronics';
     if (lowerTitle.includes('dsa') || lowerTitle.includes('algorithm') || lowerTitle.includes('data structure')) return 'DSA';
-    if (lowerTitle.includes('aptitude') || lowerTitle.includes('math') || lowerTitle.includes('reasoning')) return 'Aptitude';
-    if (lowerTitle.includes('react') || lowerTitle.includes('vite') || lowerTitle.includes('js')) return 'Projects';
+    if (lowerTitle.includes('aptitude') || lowerTitle.includes('math') || lowerTitle.includes('reasoning') || lowerTitle.includes('quant')) return 'Aptitude';
+    if (lowerTitle.includes('os') || lowerTitle.includes('dbms') || lowerTitle.includes('networking') || lowerTitle.includes('core')) return 'Core Subjects';
+    if (lowerTitle.includes('react') || lowerTitle.includes('vite') || lowerTitle.includes('js') || lowerTitle.includes('coding') || lowerTitle.includes('project')) return 'Projects';
     return 'Misc';
   }
 
   const handleSessionComplete = async (sessionData) => {
     const category = categorizeSession(sessionData.title);
+    const durationMins = sessionData.duration / 60;
+    
+    // Determine growth stage based on focus time
+    let stage = 1; // Sprout
+    if (durationMins >= 300) stage = 4;      // 5+ hrs: Complete Tree
+    else if (durationMins >= 180) stage = 3;  // 3-5 hrs: Small Tree
+    else if (durationMins >= 60) stage = 2;   // 1-3 hrs: Sapling
+    else stage = 1;                           // <1 hr: Sprout
+
     const newSession = {
       ...sessionData,
       user_id: session.user.id,
@@ -77,17 +88,17 @@ function App() {
     const { error: sError } = await supabase.from('sessions').insert([newSession])
     if (!sError) setSessions(prev => [newSession, ...prev])
     
-    // Add a new tree
+    // Add a new tree with calculated stage
     const occupiedPositions = trees.map(t => t.position)
     let randomPos
     do {
-      randomPos = Math.floor(Math.random() * 200)
+      randomPos = Math.floor(Math.random() * 250)
     } while (occupiedPositions.includes(randomPos))
 
     const newTree = {
       user_id: session.user.id,
       position: randomPos,
-      stage: Math.floor(Math.random() * 2) + 2,
+      stage: stage,
       title: `${newSession.title} (${category})`,
       category,
       date: newSession.date
@@ -145,8 +156,8 @@ function App() {
       <main className="main-content">
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
           <div>
-            <h1 style={{ fontSize: '28px', fontWeight: 'bold' }}>Welcome back, GrowMind User</h1>
-            <p style={{ color: 'var(--text-muted)' }}>You've unlocked {Math.floor(trees.length / 5)} new land tiles. Keep it up!</p>
+            <h1 style={{ fontSize: '28px', fontWeight: 'bold' }}>Welcome back, {session?.user?.email?.split('@')[0] || 'GrowMind User'}</h1>
+            <p style={{ color: 'var(--text-muted)' }}>World Power: {trees.length + (currentStreak * 3)} — You've unlocked {Math.floor((trees.length + currentStreak * 3) / 30)} focus biomes.</p>
           </div>
           <button className="btn btn-primary" onClick={() => setActiveTab('session')}>
             <Plus size={20} />
@@ -170,7 +181,7 @@ function App() {
 
         {activeTab === 'dashboard' && (
           <div className="dashboard-grid">
-            <ForestView trees={trees} />
+            <ForestView trees={trees} biome={activeBiome} />
             <div className="card glass-morphism" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '600' }}>Recent Growth</h3>
               <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -204,7 +215,7 @@ function App() {
 
         {activeTab === 'pdf-reader' && <PDFReader />}
 
-        {activeTab === 'map' && <ForestMap trees={trees} />}
+        {activeTab === 'map' && <ForestMap trees={trees} onSelectBiome={setActiveBiome} activeBiome={activeBiome} />}
 
         {activeTab === 'analytics' && <Analytics trees={trees} sessions={sessions} />}
       </main>
