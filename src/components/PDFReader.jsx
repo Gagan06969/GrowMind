@@ -13,12 +13,31 @@ const PDFReader = () => {
   const [speech, setSpeech] = useState(null);
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
   const [debugInfo, setDebugInfo] = useState({ pages: 0, textLength: 0, status: 'Idle' });
+  const [voices, setVoices] = useState([]);
+  const [selectedVoice, setSelectedVoice] = useState(null);
 
   useEffect(() => {
     if ('speechSynthesis' in window) {
       const synth = window.speechSynthesis;
       setSpeech(synth);
       setDebugInfo(prev => ({ ...prev, status: 'Speech API Ready' }));
+
+      const loadVoices = () => {
+        const availableVoices = synth.getVoices();
+        setVoices(availableVoices);
+        if (availableVoices.length > 0 && !selectedVoice) {
+          // Prefer English voices
+          const preferred = availableVoices.find(v => v.lang.startsWith('en') && v.name.includes('Google')) || 
+                            availableVoices.find(v => v.lang.startsWith('en')) || 
+                            availableVoices[0];
+          setSelectedVoice(preferred.name);
+        }
+      };
+
+      loadVoices();
+      if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = loadVoices;
+      }
     } else {
       setDebugInfo(prev => ({ ...prev, status: 'Speech API Not Supported' }));
     }
@@ -56,7 +75,7 @@ const PDFReader = () => {
         
         const finalText = fullText.trim();
         if (!finalText) {
-          setText('No text found in PDF. This might be a scanned document or image-based PDF.');
+          setText('No text found in PDF. This might be a scanned document or image-based PDF (OCR required).');
           setDebugInfo(prev => ({ ...prev, textLength: 0, status: 'No text content found' }));
         } else {
           setText(finalText);
@@ -81,13 +100,26 @@ const PDFReader = () => {
     }
 
     const utterance = new SpeechSynthesisUtterance(textArray[index]);
+    if (selectedVoice) {
+      const voiceObject = voices.find(v => v.name === selectedVoice);
+      if (voiceObject) utterance.voice = voiceObject;
+    }
+
     utterance.onstart = () => {
+      setCurrentChunkIndex(index);
       setDebugInfo(prev => ({ ...prev, status: `Reading paragraph ${index + 1} of ${textArray.length}` }));
+      
+      // Auto-scroll to current paragraph
+      const element = document.getElementById(`chunk-${index}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     };
+
     utterance.onend = () => {
-      setCurrentChunkIndex(index + 1);
       readChunk(index + 1, textArray);
     };
+
     utterance.onerror = (e) => {
       console.error('Speech synthesis error:', e);
       setIsReading(false);
@@ -120,8 +152,15 @@ const PDFReader = () => {
     setDebugInfo({ pages: 0, textLength: 0, status: 'Idle' });
   };
 
+  const textChunks = text.split('\n\n').filter(t => t.trim().length > 0);
+
   return (
     <div className="pdf-reader glass-morphism" style={{ padding: '40px', maxWidth: '800px', margin: '40px auto' }}>
+      <style>{`
+        .active-chunk { background: rgba(46, 204, 113, 0.2); border-left: 4px solid var(--primary-green); padding-left: 12px; border-radius: 4px; }
+        .chunk { padding: 4px 0; transition: background 0.3s ease; }
+      `}</style>
+      
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <Volume2 size={48} color="var(--primary-green)" style={{ marginBottom: '16px' }} />
         <h2>Study Audio Assistant</h2>
@@ -137,15 +176,28 @@ const PDFReader = () => {
           display: 'flex', 
           alignItems: 'center', 
           gap: '12px',
+          flexWrap: 'wrap',
           border: '1px solid var(--glass-border)'
         }}>
-          <Info size={16} color="var(--primary-green)" />
-          <span style={{ color: 'var(--text-muted)' }}>Status: </span>
-          <span style={{ fontWeight: '600' }}>{debugInfo.status}</span>
-          {debugInfo.pages > 0 && (
-            <span style={{ marginLeft: 'auto', color: 'var(--text-muted)' }}>
-              {debugInfo.pages} pages | {Math.round(debugInfo.textLength / 1000)}k chars
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Info size={16} color="var(--primary-green)" />
+            <span style={{ color: 'var(--text-muted)' }}>Status: </span>
+            <span style={{ fontWeight: '600' }}>{debugInfo.status}</span>
+          </div>
+          
+          {voices.length > 0 && (
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Voice: </span>
+              <select 
+                value={selectedVoice || ''} 
+                onChange={(e) => setSelectedVoice(e.target.value)}
+                style={{ background: 'var(--bg-card)', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '4px', fontSize: '12px', padding: '2px 4px' }}
+              >
+                {voices.map(v => (
+                  <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
+                ))}
+              </select>
+            </div>
           )}
         </div>
 
@@ -173,11 +225,20 @@ const PDFReader = () => {
               overflowY: 'auto',
               border: '1px solid var(--glass-border)',
               fontSize: '15px',
-              lineHeight: '1.6',
-              color: 'var(--text-light)',
+              lineHeight: '1.8',
+              color: 'var(--text-main)',
               whiteSpace: 'pre-wrap'
             }}>
-              {text}
+              {textChunks.map((chunk, idx) => (
+                <div 
+                  key={idx} 
+                  id={`chunk-${idx}`}
+                  className={`chunk ${idx === currentChunkIndex && isReading ? 'active-chunk' : ''}`}
+                  style={{ marginBottom: '16px' }}
+                >
+                  {chunk}
+                </div>
+              ))}
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
