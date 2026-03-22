@@ -12,23 +12,13 @@ const Sidebar = ({ activeTab, setActiveTab, streak = 0 }) => {
   ];
 
   return (
-    <div className="sidebar glass-morphism" style={{
-      width: 'var(--sidebar-width)',
-      height: '100%',
-      padding: '24px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '32px',
-      borderRight: '1px solid var(--glass-border)',
-      borderTopRightRadius: '0',
-      borderBottomRightRadius: '0'
-    }}>
-      <div className="logo" style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--primary-green)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+    <div className="sidebar glass-morphism">
+      <div className="logo sidebar-logo" style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--primary-green)', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <img src={logo} alt="GrowMind" style={{ width: '32px', height: '32px', borderRadius: '8px' }} />
-        GrowMind
+        <span className="logo-text">GrowMind</span>
       </div>
 
-      <div className="streak-card glass-morphism" style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="streak-card sidebar-streak glass-morphism" style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
         <Flame color="#e67e22" fill="#e67e22" size={24} />
         <div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Daily Streak</div>
@@ -36,12 +26,12 @@ const Sidebar = ({ activeTab, setActiveTab, streak = 0 }) => {
         </div>
       </div>
 
-      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <nav className="sidebar-nav" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {menuItems.map((item) => (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
-            className={`btn ${activeTab === item.id ? 'btn-primary' : ''}`}
+            className={`btn nav-item ${activeTab === item.id ? 'btn-primary' : ''}`}
             style={{
               justifyContent: 'flex-start',
               background: activeTab === item.id ? undefined : 'transparent',
@@ -49,18 +39,18 @@ const Sidebar = ({ activeTab, setActiveTab, streak = 0 }) => {
             }}
           >
             <item.icon size={20} />
-            {item.label}
+            <span>{item.label}</span>
           </button>
         ))}
       </nav>
 
       <button 
         onClick={() => supabase.auth.signOut()}
-        className="btn" 
+        className="btn logout-btn" 
         style={{ background: 'transparent', color: '#e74c3c', justifyContent: 'flex-start' }}
       >
         <Settings size={20} />
-        Sign Out
+        <span>Sign Out</span>
       </button>
     </div>
   );

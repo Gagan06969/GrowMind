@@ -72,9 +72,9 @@ const ForestMap = ({ trees = [], onSelectBiome, activeBiome, streak = 0 }) => {
     <div className="card glass-morphism map-view" style={{ 
       position: 'relative', 
       width: '100%', 
-      aspectRatio: '16/9', 
-      overflow: 'hidden',
-      padding: '40px',
+      minHeight: '400px',
+      overflow: 'auto',
+      padding: '20px',
       background: 'radial-gradient(circle at center, #141e1b, #0a0f0d)'
     }}>
       <div style={{ position: 'absolute', top: '24px', left: '24px', zIndex: 10 }}>

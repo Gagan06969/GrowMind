@@ -90,9 +90,9 @@ const ForestView = ({ trees = [], biome = 'forest' }) => {
 
   return (
     <div className="card glass-morphism forest-view" style={{ 
-      flex: '1 1 600px', 
+      flex: '1 1 350px', 
       overflow: 'auto', 
-      maxHeight: '600px',
+      maxHeight: '500px',
       cursor: 'grab',
       background: currentConfig.bg
     }}>

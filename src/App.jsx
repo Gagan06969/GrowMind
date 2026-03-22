@@ -167,7 +167,7 @@ function App() {
 
         <section className="stats-row" style={{ display: 'flex', gap: '20px', marginBottom: '32px', flexWrap: 'wrap' }}>
           {stats.map((stat, idx) => (
-            <div key={idx} className="glass-morphism" style={{ flex: '1 1 200px', padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div key={idx} className="glass-morphism stat-card" style={{ flex: '1 1 200px', padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
               <div style={{ padding: '12px', background: `${stat.color}22`, borderRadius: '12px' }}>
                 <stat.icon size={24} color={stat.color} />
               </div>
