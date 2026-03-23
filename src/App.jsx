@@ -24,6 +24,7 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [activeBiome, setActiveBiome] = useState('forest')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [showToast, setShowToast] = useState(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -132,8 +133,14 @@ function App() {
 
       if (tError) throw tError;
       if (tData) setTrees(prev => [...prev, tData]);
-
+      // Success feedback
       setActiveTab('dashboard');
+      setShowToast({
+        title: "Seed Planted!",
+        message: `A new ${stage === 1 ? 'sprout' : 'tree'} has grown in your forest!`
+      });
+      setTimeout(() => setShowToast(null), 5000);
+      
     } catch (err) {
       console.error('Fatal saving error:', err);
     }
@@ -180,10 +187,36 @@ function App() {
 
   return (
     <div className={`app-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-      {/* Temporary Debug Overlay */}
-      <div style={{ position: 'fixed', bottom: '10px', right: '10px', background: 'black', color: 'lime', fontSize: '10px', padding: '5px', zIndex: 9999, opacity: 0.7, pointerEvents: 'none', borderRadius: '4px' }}>
-        Debug: {sessions.length} sessions, {trees.length} trees | User: {session?.user?.id?.slice(0,8)}
-      </div>
+      {/* Success Notification (Dopamine hit) */}
+      {showToast && (
+        <motion.div 
+          initial={{ y: -100, x: '-50%', opacity: 0 }}
+          animate={{ y: 20, x: '-50%', opacity: 1 }}
+          exit={{ y: -100, x: '-50%', opacity: 0 }}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: '50%',
+            zIndex: 10000,
+            padding: '16px 24px',
+            background: 'linear-gradient(135deg, var(--primary-green), #27ae60)',
+            color: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 10px 40px rgba(46, 204, 113, 0.4)',
+            textAlign: 'center',
+            minWidth: '300px',
+            border: '1px solid rgba(255,255,255,0.2)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
+            <TreePine size={24} />
+            <div>
+              <div style={{ fontWeight: '800', fontSize: '18px' }}>{showToast.title}</div>
+              <div style={{ opacity: 0.9, fontSize: '14px' }}>{showToast.message}</div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <Sidebar activeTab={activeTab} setActiveTab={(tab) => { setActiveTab(tab); setIsSidebarOpen(false); }} streak={currentStreak} isOpen={isSidebarOpen} />
       
