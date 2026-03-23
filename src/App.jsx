@@ -74,10 +74,7 @@ function App() {
   }
 
   const handleSessionComplete = async (sessionData) => {
-    if (!session?.user) {
-      alert("Error: You must be logged in to save sessions.");
-      return;
-    }
+    if (!session?.user) return;
     
     console.log("Completing session:", sessionData);
     const category = categorizeSession(sessionData.title);
@@ -136,12 +133,9 @@ function App() {
       if (tError) throw tError;
       if (tData) setTrees(prev => [...prev, tData]);
 
-      // Success feedback
       setActiveTab('dashboard');
-      console.log("Session saved successfully!");
     } catch (err) {
       console.error('Fatal saving error:', err);
-      alert(`Failed to save session: ${err.message || 'Unknown error'}`);
     }
   }
 

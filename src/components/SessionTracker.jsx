@@ -126,7 +126,6 @@ const SessionTracker = ({ onComplete, onCancel }) => {
     clearInterval(timerRef.current);
     setIsActive(false);
     setStatus('completed');
-    console.log("Session complete triggered", duration);
     onComplete({
       duration: Math.max(1, syncWithVideo ? timeLeft : (duration - timeLeft)),
       type: sessionType,
