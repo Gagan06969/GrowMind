@@ -74,17 +74,20 @@ function App() {
   }
 
   const handleSessionComplete = async (sessionData) => {
-    if (!session?.user) return;
+    if (!session?.user) {
+      alert("Error: You must be logged in to save sessions.");
+      return;
+    }
     
+    console.log("Completing session:", sessionData);
     const category = categorizeSession(sessionData.title);
     const durationMins = sessionData.duration / 60;
     
-    // Determine growth stage based on focus time
-    let stage = 1; // Sprout
-    if (durationMins >= 300) stage = 4;      // 5+ hrs: Complete Tree
-    else if (durationMins >= 180) stage = 3;  // 3-5 hrs: Small Tree
-    else if (durationMins >= 60) stage = 2;   // 1-3 hrs: Sapling
-    else stage = 1;                           // <1 hr: Sprout
+    let stage = 1;
+    if (durationMins >= 300) stage = 4;
+    else if (durationMins >= 180) stage = 3;
+    else if (durationMins >= 60) stage = 2;
+    else stage = 1;
 
     const sessionToInsert = {
       title: sessionData.title || 'Untitled Session',
@@ -94,52 +97,52 @@ function App() {
       date: formatDate()
     }
     
-    // Insert session and get the created object (with ID and created_at)
-    const { data: sData, error: sError } = await supabase
-      .from('sessions')
-      .insert([sessionToInsert])
-      .select()
-      .single()
+    try {
+      // 1. Save Session
+      const { data: sData, error: sError } = await supabase
+        .from('sessions')
+        .insert([sessionToInsert])
+        .select()
+        .single()
 
-    if (!sError && sData) {
-      setSessions(prev => [sData, ...prev])
-    } else {
-      console.error('Session insert error:', sError)
-    }
-    
-    // Add a new tree with calculated stage
-    const occupiedPositions = new Set(trees.map(t => t.position))
-    let randomPos = 0
-    let attempts = 0
-    // World map is 30x30 = 900 spots. 
-    while (attempts < 500) {
-      randomPos = Math.floor(Math.random() * 900)
-      if (!occupiedPositions.has(randomPos)) break
-      attempts++
-    }
+      if (sError) throw sError;
+      if (sData) setSessions(prev => [sData, ...prev]);
 
-    const treeToInsert = {
-      user_id: session.user.id,
-      position: randomPos,
-      stage: stage,
-      title: `${sessionToInsert.title} (${category})`,
-      category,
-      date: sessionToInsert.date
-    }
-    
-    const { data: tData, error: tError } = await supabase
-      .from('trees')
-      .insert([treeToInsert])
-      .select()
-      .single()
+      // 2. Save Tree
+      const occupiedPositions = new Set(trees.map(t => t.position));
+      let randomPos = 0;
+      let attempts = 0;
+      while (attempts < 500) {
+        randomPos = Math.floor(Math.random() * 900);
+        if (!occupiedPositions.has(randomPos)) break;
+        attempts++;
+      }
 
-    if (!tError && tData) {
-      setTrees(prev => [...prev, tData])
-    } else {
-      console.error('Tree insert error:', tError)
+      const treeToInsert = {
+        user_id: session.user.id,
+        position: randomPos,
+        stage: stage,
+        title: `${sessionToInsert.title} (${category})`,
+        category,
+        date: sessionToInsert.date
+      }
+      
+      const { data: tData, error: tError } = await supabase
+        .from('trees')
+        .insert([treeToInsert])
+        .select()
+        .single()
+
+      if (tError) throw tError;
+      if (tData) setTrees(prev => [...prev, tData]);
+
+      // Success feedback
+      setActiveTab('dashboard');
+      console.log("Session saved successfully!");
+    } catch (err) {
+      console.error('Fatal saving error:', err);
+      alert(`Failed to save session: ${err.message || 'Unknown error'}`);
     }
-    
-    setActiveTab('dashboard')
   }
 
   if (!session) return <Auth />

@@ -222,6 +222,7 @@ const StudyHub = ({ onComplete }) => {
                     {videoTitle}
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--primary-green)', fontWeight: '600' }}>Focusing for {formatTime(elapsedTime)}</div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Click "Complete Session" when done to save!</div>
                 </div>
              </div>
              <div style={{ display: 'flex', gap: '12px' }}>
