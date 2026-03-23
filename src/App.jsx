@@ -135,11 +135,14 @@ function App() {
       if (tData) setTrees(prev => [...prev, tData]);
       // Success feedback
       setActiveTab('dashboard');
+      const row = Math.floor(randomPos / 30) + 1;
+      const col = (randomPos % 30) + 1;
+      
       setShowToast({
         title: "Seed Planted!",
-        message: `A new ${stage === 1 ? 'sprout' : 'tree'} has grown in your forest!`
+        message: `A new ${stage === 1 ? 'sprout' : 'tree'} has grown at Row ${row}, Col ${col}!`
       });
-      setTimeout(() => setShowToast(null), 5000);
+      setTimeout(() => setShowToast(null), 8000);
       
     } catch (err) {
       console.error('Fatal saving error:', err);
@@ -257,7 +260,7 @@ function App() {
 
         {activeTab === 'dashboard' && (
           <div className="dashboard-grid">
-            <ForestView trees={trees} biome={activeBiome} />
+            <ForestView trees={trees} biome={activeBiome} unlockedCount={250 + (trees.length * 10)} />
             <div className="card glass-morphism" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '600' }}>Recent Growth</h3>
               <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>

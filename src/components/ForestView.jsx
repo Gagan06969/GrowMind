@@ -55,7 +55,7 @@ const Tree = ({ stage, biome }) => {
   );
 };
 
-const ForestView = ({ trees = [], biome = 'forest' }) => {
+const ForestView = ({ trees = [], biome = 'forest', unlockedCount = 250 }) => {
   const gridSize = 30;
   const totalTiles = gridSize * gridSize;
   
@@ -77,7 +77,7 @@ const ForestView = ({ trees = [], biome = 'forest' }) => {
     return {
       id: i,
       tree: tree || null,
-      locked: i > 250
+      locked: i > unlockedCount
     };
   });
 
@@ -115,7 +115,20 @@ const ForestView = ({ trees = [], biome = 'forest' }) => {
                  justifyContent: 'center'
                }}
                title={tile.tree ? `${tile.tree.title}\n${tile.tree.date}` : ''}>
-            {tile.tree && <Tree stage={tile.tree.stage} biome={tile.tree.category?.toLowerCase() || 'forest'} />}
+            {tile.tree && (
+              <div style={{ position: 'relative' }}>
+                <Tree stage={tile.tree.stage} biome={tile.tree.category?.toLowerCase() || 'forest'} />
+                {new Date(tile.tree.created_at || tile.tree.date) > new Date(Date.now() - 30000) && (
+                  <motion.div 
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: [1, 1.2, 1], opacity: 1 }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#e74c3c', color: 'white', fontSize: '8px', padding: '2px 4px', borderRadius: '4px', fontWeight: 'bold' }}>
+                    NEW!
+                  </motion.div>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
