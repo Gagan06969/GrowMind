@@ -11,13 +11,13 @@ const Analytics = ({ trees = [], sessions = [], streak = 0 }) => {
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(now.getDate() - i);
-    return d.toLocaleDateString();
+    return d.toISOString().split('T')[0];
   }).reverse();
 
   const weeklyData = last7Days.map(dateStr => {
     const dailySessions = sessions.filter(s => s.date === dateStr);
     const totalHours = dailySessions.reduce((acc, s) => acc + (s.duration / 3600), 0);
-    const dayName = days[new Date(dateStr).getDay()];
+    const dayName = days[new Date(dateStr).getUTCDay()];
     return { day: dayName, hours: parseFloat(totalHours.toFixed(1)), date: dateStr };
   });
 

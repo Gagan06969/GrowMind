@@ -13,6 +13,10 @@ import { supabase } from './supabaseClient'
 import Auth from './components/Auth'
 
 function App() {
+  const formatDate = (date = new Date()) => {
+    return date.toISOString().split('T')[0];
+  };
+
   const [session, setSession] = useState(null)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [trees, setTrees] = useState([])
@@ -87,7 +91,7 @@ function App() {
       duration: Math.floor(sessionData.duration),
       user_id: session.user.id,
       category,
-      date: new Date().toLocaleDateString()
+      date: formatDate()
     }
     
     // Insert session and get the created object (with ID and created_at)
@@ -145,9 +149,9 @@ function App() {
     if (!sessionData || sessionData.length === 0) return 0;
     
     // Sort unique dates in descending order
-    const dates = [...new Set(sessionData.map(s => s.date))].sort((a, b) => new Date(b) - new Date(a));
-    const today = new Date().toLocaleDateString();
-    const yesterday = new Date(Date.now() - 86400000).toLocaleDateString();
+    const dates = [...new Set(sessionData.map(s => s.date))].sort((a, b) => b.localeCompare(a));
+    const today = formatDate();
+    const yesterday = formatDate(new Date(Date.now() - 86400000));
 
     if (dates[0] !== today && dates[0] !== yesterday) return 0;
 
