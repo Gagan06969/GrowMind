@@ -70,6 +70,8 @@ function App() {
   }
 
   const handleSessionComplete = async (sessionData) => {
+    if (!session?.user) return;
+    
     const category = categorizeSession(sessionData.title);
     const durationMins = sessionData.duration / 60;
     
@@ -80,34 +82,58 @@ function App() {
     else if (durationMins >= 60) stage = 2;   // 1-3 hrs: Sapling
     else stage = 1;                           // <1 hr: Sprout
 
-    const newSession = {
-      ...sessionData,
+    const sessionToInsert = {
+      title: sessionData.title || 'Untitled Session',
+      duration: Math.floor(sessionData.duration),
       user_id: session.user.id,
       category,
       date: new Date().toLocaleDateString()
     }
     
-    const { error: sError } = await supabase.from('sessions').insert([newSession])
-    if (!sError) setSessions(prev => [newSession, ...prev])
+    // Insert session and get the created object (with ID and created_at)
+    const { data: sData, error: sError } = await supabase
+      .from('sessions')
+      .insert([sessionToInsert])
+      .select()
+      .single()
+
+    if (!sError && sData) {
+      setSessions(prev => [sData, ...prev])
+    } else {
+      console.error('Session insert error:', sError)
+    }
     
     // Add a new tree with calculated stage
-    const occupiedPositions = trees.map(t => t.position)
-    let randomPos
-    do {
-      randomPos = Math.floor(Math.random() * 250)
-    } while (occupiedPositions.includes(randomPos))
+    const occupiedPositions = new Set(trees.map(t => t.position))
+    let randomPos = 0
+    let attempts = 0
+    // World map is 30x30 = 900 spots. 
+    while (attempts < 500) {
+      randomPos = Math.floor(Math.random() * 900)
+      if (!occupiedPositions.has(randomPos)) break
+      attempts++
+    }
 
-    const newTree = {
+    const treeToInsert = {
       user_id: session.user.id,
       position: randomPos,
       stage: stage,
-      title: `${newSession.title} (${category})`,
+      title: `${sessionToInsert.title} (${category})`,
       category,
-      date: newSession.date
+      date: sessionToInsert.date
     }
     
-    const { error: tError } = await supabase.from('trees').insert([newTree])
-    if (!tError) setTrees(prev => [...prev, newTree])
+    const { data: tData, error: tError } = await supabase
+      .from('trees')
+      .insert([treeToInsert])
+      .select()
+      .single()
+
+    if (!tError && tData) {
+      setTrees(prev => [...prev, tData])
+    } else {
+      console.error('Tree insert error:', tError)
+    }
     
     setActiveTab('dashboard')
   }
