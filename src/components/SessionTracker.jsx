@@ -277,8 +277,9 @@ const SessionTracker = ({ onComplete, onCancel }) => {
           {videoId && (
             <div style={{ flex: '1 1 500px', minHeight: '350px', borderRadius: '16px', overflow: 'hidden', background: 'black', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)' }}>
                <iframe
+                key={videoId}
                 style={{ width: '100%', height: '100%', border: '0' }}
-                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1`}
+                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`}
                 title="YouTube video player"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen

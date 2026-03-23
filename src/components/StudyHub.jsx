@@ -248,6 +248,7 @@ const StudyHub = ({ onComplete }) => {
             border: '1px solid rgba(255,255,255,0.05)'
           }}>
             <iframe
+              key={videoId}
               style={{
                 position: 'absolute',
                 top: 0,
@@ -256,7 +257,7 @@ const StudyHub = ({ onComplete }) => {
                 height: '100%',
                 border: '0'
               }}
-              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`}
               title="YouTube video player"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
