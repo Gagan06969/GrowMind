@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Map, BarChart3, Headphones, Settings, Flame } from 'lucide-react';
+import { LayoutDashboard, Map, BarChart3, Headphones, Settings, Flame, Video } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import logo from '../assets/logo.png';
 
@@ -9,6 +9,7 @@ const Sidebar = ({ activeTab, setActiveTab, streak = 0 }) => {
     { id: 'map', icon: Map, label: 'Forest Map' },
     { id: 'analytics', icon: BarChart3, label: 'Analytics' },
     { id: 'pdf-reader', icon: Headphones, label: 'PDF Reader' },
+    { id: 'study-hub', icon: Video, label: 'Study Hub' },
   ];
 
   return (

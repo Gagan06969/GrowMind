@@ -1,0 +1,62 @@
+
+> growmind@0.0.0 lint
+> eslint .
+
+
+C:\Users\91932\Downloads\GrowMind\src\App.jsx
+   38:7   error    Error: Cannot access variable before it is declared
+
+`fetchUserData` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  36 |   useEffect(() => {
+  37 |     if (session) {
+> 38 |       fetchUserData()
+     |       ^^^^^^^^^^^^^ `fetchUserData` accessed before it is declared
+  39 |     } else {
+  40 |       setLoading(false)
+  41 |     }
+
+  42 |   }, [session])
+  43 |
+> 44 |   const fetchUserData = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 45 |     setLoading(true)
+     | ^^^^^^^^^^^^^^^^^^^^
+> 46 |     const { data: treesData } = await supabase
+     …
+     | ^^^^^^^^^^^^^^^^^^^^
+> 59 |     setLoading(false)
+     | ^^^^^^^^^^^^^^^^^^^^
+> 60 |   }
+     | ^^^^ `fetchUserData` is declared here
+  61 |
+  62 |   const categorizeSession = (title) => {
+  63 |     const lowerTitle = title.toLowerCase();  react-hooks/immutability
+   42:6   warning  React Hook useEffect has a missing dependency: 'fetchUserData'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-hooks/exhaustive-deps
+  124:32  error    Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  122 |     const dates = [...new Set(sessionData.map(s => s.date))].sort((a, b) => new Date(b) - new Date(a));
+  123 |     const today = new Date().toLocaleDateString();
+> 124 |     const yesterday = new Date(Date.now() - 86400000).toLocaleDateString();
+      |                                ^^^^^^^^^^ Cannot call impure function
+  125 |
+  126 |     if (dates[0] !== today && dates[0] !== yesterday) return 0;
+  127 |                                                                                                                                                           react-hooks/purity
+
+C:\Users\91932\Downloads\GrowMind\src\components\ForestMap.jsx
+  2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\91932\Downloads\GrowMind\src\components\ForestView.jsx
+  2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\91932\Downloads\GrowMind\src\components\PDFReader.jsx
+  47:6  warning  React Hook useEffect has a missing dependency: 'selectedVoice'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\91932\Downloads\GrowMind\src\components\SessionTracker.jsx
+   3:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                       no-unused-vars
+  50:6   warning  React Hook useEffect has missing dependencies: 'duration' and 'handleComplete'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 8 problems (5 errors, 3 warnings)
+

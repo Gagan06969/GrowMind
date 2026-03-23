@@ -5,8 +5,9 @@ import SessionTracker from './components/SessionTracker'
 import PDFReader from './components/PDFReader'
 import ForestMap from './components/ForestMap'
 import Analytics from './components/Analytics'
+import StudyHub from './components/StudyHub'
 import './App.css'
-import { Play, Plus, Clock, TreePine, Flame, BarChart3, Map as MapIcon, Menu, X } from 'lucide-react'
+import { Plus, Clock, TreePine, Flame, Menu, X } from 'lucide-react'
 
 import { supabase } from './supabaseClient'
 import Auth from './components/Auth'
@@ -228,6 +229,8 @@ function App() {
         {activeTab === 'map' && <ForestMap trees={trees} onSelectBiome={setActiveBiome} activeBiome={activeBiome} />}
 
         {activeTab === 'analytics' && <Analytics trees={trees} sessions={sessions} />}
+
+        {activeTab === 'study-hub' && <StudyHub onComplete={handleSessionComplete} />}
       </main>
     </div>
   )
