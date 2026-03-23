@@ -122,10 +122,44 @@ const SessionTracker = ({ onComplete, onCancel }) => {
     setStatus('idle');
   };
 
+  const [isSaved, setIsSaved] = useState(false);
+  const elapsedTimeRef = useRef(0);
+  const isActiveRef = useRef(false);
+  const isSavedRef = useRef(false);
+  const videoTitleRef = useRef('');
+  const sessionTypeRef = useRef('focus');
+
+  useEffect(() => {
+    elapsedTimeRef.current = syncWithVideo ? timeLeft : (duration - timeLeft);
+    isActiveRef.current = isActive;
+    isSavedRef.current = isSaved;
+    videoTitleRef.current = videoTitle || url || 'Study Session';
+    sessionTypeRef.current = sessionType;
+  }, [timeLeft, duration, isActive, isSaved, videoTitle, url, sessionType, syncWithVideo]);
+
+  useEffect(() => {
+    const handleAutoSave = () => {
+      if (isActiveRef.current && !isSavedRef.current && elapsedTimeRef.current > 30) {
+        onComplete({
+          duration: Math.max(1, elapsedTimeRef.current),
+          type: sessionTypeRef.current,
+          title: videoTitleRef.current
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleAutoSave);
+    return () => {
+      window.removeEventListener('beforeunload', handleAutoSave);
+      handleAutoSave();
+    };
+  }, []);
+
   const handleComplete = () => {
     clearInterval(timerRef.current);
     setIsActive(false);
     setStatus('completed');
+    setIsSaved(true);
     onComplete({
       duration: Math.max(1, syncWithVideo ? timeLeft : (duration - timeLeft)),
       type: sessionType,

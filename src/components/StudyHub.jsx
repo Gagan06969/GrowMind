@@ -10,6 +10,39 @@ const StudyHub = ({ onComplete }) => {
   const [videoTitle, setVideoTitle] = useState('Study Session');
   
   const timerRef = useRef(null);
+  const [isSaved, setIsSaved] = useState(false);
+  
+  const elapsedTimeRef = useRef(0);
+  const isActiveRef = useRef(false);
+  const isSavedRef = useRef(false);
+  const videoTitleRef = useRef('');
+  const videoIdRef = useRef('');
+
+  useEffect(() => {
+    elapsedTimeRef.current = elapsedTime;
+    isActiveRef.current = !!videoId;
+    isSavedRef.current = isSaved;
+    videoTitleRef.current = videoTitle;
+    videoIdRef.current = videoId;
+  }, [elapsedTime, videoId, isSaved, videoTitle]);
+
+  useEffect(() => {
+    const handleAutoSave = () => {
+      if (isActiveRef.current && !isSavedRef.current && elapsedTimeRef.current > 30) {
+        onComplete({
+          duration: elapsedTimeRef.current,
+          type: 'youtube',
+          title: videoTitleRef.current || `Study Session (${videoIdRef.current})`
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleAutoSave);
+    return () => {
+      window.removeEventListener('beforeunload', handleAutoSave);
+      handleAutoSave(); 
+    };
+  }, []);
   
   const [history, setHistory] = useState(() => {
     const saved = localStorage.getItem('studyhub_history');
@@ -66,6 +99,7 @@ const StudyHub = ({ onComplete }) => {
 
   const handleComplete = () => {
     if (onComplete && elapsedTime > 0) {
+      setIsSaved(true);
       onComplete({
         duration: elapsedTime,
         type: 'youtube',

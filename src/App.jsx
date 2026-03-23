@@ -74,8 +74,15 @@ function App() {
     return 'Misc';
   }
 
+  const lastSessionTimestamp = useRef(0);
+
   const handleSessionComplete = async (sessionData) => {
     if (!session?.user) return;
+    
+    // Prevent duplicate saves (cooldown of 2 seconds)
+    const now = Date.now();
+    if (now - lastSessionTimestamp.current < 2000) return;
+    lastSessionTimestamp.current = now;
     
     console.log("Completing session:", sessionData);
     const category = categorizeSession(sessionData.title);
