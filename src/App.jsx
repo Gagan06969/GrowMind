@@ -26,6 +26,7 @@ function App() {
   const [activeBiome, setActiveBiome] = useState('forest')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [showToast, setShowToast] = useState(null)
+  const [lastPlantedPos, setLastPlantedPos] = useState(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -140,7 +141,10 @@ function App() {
         .single()
 
       if (tError) throw tError;
-      if (tData) setTrees(prev => [...prev, tData]);
+      if (tData) {
+        setTrees(prev => [...prev, tData]);
+        setLastPlantedPos(tData.position);
+      }
       // Success feedback
       setActiveTab('dashboard');
       const row = Math.floor(randomPos / 30) + 1;
@@ -268,7 +272,7 @@ function App() {
 
         {activeTab === 'dashboard' && (
           <div className="dashboard-grid">
-            <ForestView trees={trees} biome={activeBiome} unlockedCount={250 + (trees.length * 10)} />
+            <ForestView trees={trees} biome={activeBiome} unlockedCount={250 + (trees.length * 10)} lastPlantedPos={lastPlantedPos} />
             <div className="card glass-morphism" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '600' }}>Recent Growth</h3>
               <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>

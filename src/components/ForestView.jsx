@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 const Tree = ({ stage, biome }) => {
@@ -55,9 +55,19 @@ const Tree = ({ stage, biome }) => {
   );
 };
 
-const ForestView = ({ trees = [], biome = 'forest', unlockedCount = 250 }) => {
+const ForestView = ({ trees = [], biome = 'forest', unlockedCount = 250, lastPlantedPos = null }) => {
   const gridSize = 30;
   const totalTiles = gridSize * gridSize;
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (lastPlantedPos !== null && containerRef.current) {
+      const tileElement = containerRef.current.querySelector(`[data-pos="${lastPlantedPos}"]`);
+      if (tileElement) {
+        tileElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      }
+    }
+  }, [lastPlantedPos]);
   
   const biomeConfigs = {
     forest: { bg: 'rgba(46, 204, 113, 0.05)', tileBg: 'rgba(255,255,255,0.02)' },
@@ -89,7 +99,9 @@ const ForestView = ({ trees = [], biome = 'forest', unlockedCount = 250 }) => {
   };
 
   return (
-    <div className="card glass-morphism forest-view" style={{ 
+    <div 
+      ref={containerRef}
+      className="card glass-morphism forest-view" style={{ 
       flex: '1 1 350px', 
       overflow: 'auto', 
       maxHeight: '500px',
@@ -104,8 +116,10 @@ const ForestView = ({ trees = [], biome = 'forest', unlockedCount = 250 }) => {
         padding: '100px',
         gap: '20px'
       }}>
-        {grid.map((tile) => (
-          <div key={tile.id} className={`tile ${tile.locked ? 'locked' : ''}`} 
+        {grid.map((tile, i) => (
+          <div key={tile.id} 
+               data-pos={i}
+               className={`tile ${tile.locked ? 'locked' : ''}`} 
                style={{ 
                  width: '60px', 
                  height: '60px',
@@ -118,12 +132,12 @@ const ForestView = ({ trees = [], biome = 'forest', unlockedCount = 250 }) => {
             {tile.tree && (
               <div style={{ position: 'relative' }}>
                 <Tree stage={tile.tree.stage} biome={tile.tree.category?.toLowerCase() || 'forest'} />
-                {new Date(tile.tree.created_at || tile.tree.date) > new Date(Date.now() - 30000) && (
+                {new Date(tile.tree.created_at || tile.tree.date) > new Date(Date.now() - 60000) && (
                   <motion.div 
                     initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: [1, 1.2, 1], opacity: 1 }}
+                    animate={{ scale: [1, 1.3, 1], opacity: 1 }}
                     transition={{ repeat: Infinity, duration: 1.5 }}
-                    style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#e74c3c', color: 'white', fontSize: '8px', padding: '2px 4px', borderRadius: '4px', fontWeight: 'bold' }}>
+                    style={{ position: 'absolute', top: '-15px', right: '-15px', background: '#e74c3c', color: 'white', fontSize: '10px', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', zIndex: 10, border: '1px solid white' }}>
                     NEW!
                   </motion.div>
                 )}
