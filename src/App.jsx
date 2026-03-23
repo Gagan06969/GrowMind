@@ -170,7 +170,7 @@ function App() {
   }
 
   const currentStreak = calculateStreak(sessions);
-  const totalHours = sessions.reduce((acc, s) => acc + (s.duration / 3600), 0).toFixed(1)
+  const totalHours = sessions.reduce((acc, s) => acc + (Number(s.duration || 0) / 3600), 0).toFixed(1)
 
   const stats = [
     { label: 'Total Hours', value: `${totalHours}h`, icon: Clock, color: '#3498db' },
@@ -180,6 +180,11 @@ function App() {
 
   return (
     <div className={`app-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+      {/* Temporary Debug Overlay */}
+      <div style={{ position: 'fixed', bottom: '10px', right: '10px', background: 'black', color: 'lime', fontSize: '10px', padding: '5px', zIndex: 9999, opacity: 0.7, pointerEvents: 'none', borderRadius: '4px' }}>
+        Debug: {sessions.length} sessions, {trees.length} trees | User: {session?.user?.id?.slice(0,8)}
+      </div>
+
       <Sidebar activeTab={activeTab} setActiveTab={(tab) => { setActiveTab(tab); setIsSidebarOpen(false); }} streak={currentStreak} isOpen={isSidebarOpen} />
       
       <main className="main-content">

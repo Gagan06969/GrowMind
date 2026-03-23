@@ -16,7 +16,7 @@ const Analytics = ({ trees = [], sessions = [], streak = 0 }) => {
 
   const weeklyData = last7Days.map(dateStr => {
     const dailySessions = sessions.filter(s => s.date === dateStr);
-    const totalHours = dailySessions.reduce((acc, s) => acc + (s.duration / 3600), 0);
+    const totalHours = dailySessions.reduce((acc, s) => acc + (Number(s.duration || 0) / 3600), 0);
     const dayName = days[new Date(dateStr).getUTCDay()];
     return { day: dayName, hours: parseFloat(totalHours.toFixed(1)), date: dateStr };
   });
@@ -28,7 +28,7 @@ const Analytics = ({ trees = [], sessions = [], streak = 0 }) => {
   
   const categoryData = categories.map(cat => {
     const catSessions = sessions.filter(s => s.category === cat);
-    const totalHours = catSessions.reduce((acc, s) => acc + (s.duration / 3600), 0);
+    const totalHours = catSessions.reduce((acc, s) => acc + (Number(s.duration || 0) / 3600), 0);
     const mastery = Math.min(100, (totalHours / 5) * 100);
     return { subject: cat, value: parseFloat(mastery.toFixed(0)), fullMark: 100 };
   });
