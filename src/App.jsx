@@ -27,6 +27,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [showToast, setShowToast] = useState(null)
   const [lastPlantedPos, setLastPlantedPos] = useState(null)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -50,20 +51,32 @@ function App() {
 
   const fetchUserData = async () => {
     setLoading(true)
-    const { data: treesData } = await supabase
-      .from('trees')
-      .select('*')
-      .eq('user_id', session.user.id)
+    setError(null)
     
-    const { data: sessionsData } = await supabase
-      .from('sessions')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false })
+    try {
+      const { data: treesData, error: tErr } = await supabase
+        .from('trees')
+        .select('*')
+        .eq('user_id', session.user.id)
+      
+      if (tErr) throw tErr;
 
-    if (treesData) setTrees(treesData)
-    if (sessionsData) setSessions(sessionsData)
-    setLoading(false)
+      const { data: sessionsData, error: sErr } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+
+      if (sErr) throw sErr;
+
+      if (treesData) setTrees(treesData)
+      if (sessionsData) setSessions(sessionsData)
+    } catch (err) {
+      console.error('Supabase fetch error:', err);
+      setError(err.message || 'Failed to connect to database');
+    } finally {
+      setLoading(false)
+    }
   }
 
   const categorizeSession = (title) => {
@@ -162,6 +175,17 @@ function App() {
   }
 
   if (!session) return <Auth />
+  
+  if (error) return (
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#e74c3c', gap: '20px', padding: '40px', textAlign: 'center' }}>
+      <X size={48} />
+      <h2 style={{ color: 'white' }}>Connection Error</h2>
+      <p style={{ color: 'var(--text-muted)', maxWidth: '400px' }}>{error}</p>
+      <button className="btn btn-primary" onClick={fetchUserData}>Retry Connection</button>
+      <p style={{ fontSize: '12px', marginTop: '20px' }}>Check if your Supabase URL and Anon Key are correct in <code>.env</code></p>
+    </div>
+  )
+
   if (loading) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-green)' }}>Growing your forest...</div>
 
   const calculateStreak = (sessionData) => {
